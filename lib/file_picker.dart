@@ -9,6 +9,7 @@ enum FileType {
   VIDEO,
   AUDIO,
   CUSTOM,
+  DIR,
 }
 
 class FilePicker {
@@ -23,8 +24,7 @@ class FilePicker {
   /// A [fileExtension] can be provided to filter the picking results.
   /// If provided, it will be use the `FileType.CUSTOM` for that [fileExtension].
   /// If not, `FileType.ANY` will be used and any combination of files can be multi picked at once.
-  static Future<Map<String, String>> getMultiFilePath(
-          {FileType type = FileType.ANY, String fileExtension}) async =>
+  static Future<Map<String, String>> getMultiFilePath({FileType type = FileType.ANY, String fileExtension}) async =>
       await _getPath(_handleType(type, fileExtension), true);
 
   /// Returns an absolute file path from the calling platform.
@@ -32,18 +32,15 @@ class FilePicker {
   /// A [type] must be provided to filter the picking results.
   /// Can be used a custom file type with `FileType.CUSTOM`. A [fileExtension] must be provided (e.g. PDF, SVG, etc.)
   /// Defaults to `FileType.ANY` which will display all file types.
-  static Future<String> getFilePath(
-          {FileType type = FileType.ANY, String fileExtension}) async =>
+  static Future<String> getFilePath({FileType type = FileType.ANY, String fileExtension}) async =>
       await _getPath(_handleType(type, fileExtension), false);
 
   /// Returns a `File` object from the selected file path.
   ///
   /// This is an utility method that does the same of `getFilePath()` but saving some boilerplate if
   /// you are planing to create a `File` for the returned path.
-  static Future<File> getFile(
-      {FileType type = FileType.ANY, String fileExtension}) async {
-    final String filePath =
-        await _getPath(_handleType(type, fileExtension), false);
+  static Future<File> getFile({FileType type = FileType.ANY, String fileExtension}) async {
+    final String filePath = await _getPath(_handleType(type, fileExtension), false);
     return filePath != null ? File(filePath) : null;
   }
 
@@ -51,13 +48,9 @@ class FilePicker {
   ///
   /// This is an utility method that does the same of `getMultiFilePath()` but saving some boilerplate if
   /// you are planing to create a list of `File`s for the returned paths.
-  static Future<List<File>> getMultiFile(
-      {FileType type = FileType.ANY, String fileExtension}) async {
-    final Map<String, String> paths =
-        await _getPath(_handleType(type, fileExtension), true);
-    return paths != null && paths.isNotEmpty
-        ? paths.values.map((path) => File(path)).toList()
-        : null;
+  static Future<List<File>> getMultiFile({FileType type = FileType.ANY, String fileExtension}) async {
+    final Map<String, String> paths = await _getPath(_handleType(type, fileExtension), true);
+    return paths != null && paths.isNotEmpty ? paths.values.map((path) => File(path)).toList() : null;
   }
 
   static Future<dynamic> _getPath(String type, bool multipleSelection) async {
@@ -67,16 +60,14 @@ class FilePicker {
         if (result is String) {
           result = [result];
         }
-        return Map<String, String>.fromIterable(result,
-            key: (path) => path.split('/').last, value: (path) => path);
+        return Map<String, String>.fromIterable(result, key: (path) => path.split('/').last, value: (path) => path);
       }
       return result;
     } on PlatformException catch (e) {
       print('[$_tag] Platform exception: $e');
       rethrow;
     } catch (e) {
-      print(
-          '[$_tag] Unsupported operation. Method not found. The exception thrown was: $e');
+      print('[$_tag] Unsupported operation. Method not found. The exception thrown was: $e');
       rethrow;
     }
   }
@@ -91,6 +82,8 @@ class FilePicker {
         return 'VIDEO';
       case FileType.ANY:
         return 'ANY';
+      case FileType.DIR:
+        return 'DIR';
       case FileType.CUSTOM:
         return '__CUSTOM_' + (fileExtension ?? '');
       default:

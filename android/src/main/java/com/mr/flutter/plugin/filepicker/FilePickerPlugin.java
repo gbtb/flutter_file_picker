@@ -31,6 +31,7 @@ public class FilePickerPlugin implements MethodCallHandler {
   private static final int PERM_CODE = (FilePickerPlugin.class.hashCode() + 50) & 0x0000ffff;
   private static final String TAG = "FilePicker";
   private static final String permission = Manifest.permission.READ_EXTERNAL_STORAGE;
+  private static final String DIRECTORY_TYPE = "*/*";
 
   private static Result result;
   private static Registrar instance;
@@ -82,6 +83,10 @@ public class FilePickerPlugin implements MethodCallHandler {
                         } else if (data.getData() != null) {
                             Uri uri = data.getData();
                             Log.i(TAG, "[SingleFilePick] File URI:" + uri.toString());
+                            if(fileType == DIRECTORY_TYPE){
+                                runOnUiThread(result, uri.toString(), true);
+                                return;
+                            }
                             String fullPath = FileUtils.getPath(uri, instance.context());
 
                             if(fullPath == null) {
@@ -192,6 +197,8 @@ public class FilePickerPlugin implements MethodCallHandler {
         return "video/*";
       case "ANY":
         return "*/*";
+      case "DIR":
+        return DIRECTORY_TYPE;
       default:
         return null;
     }
@@ -204,13 +211,16 @@ public class FilePickerPlugin implements MethodCallHandler {
     Intent intent;
 
     if (checkPermission()) {
-
-        intent = new Intent(Intent.ACTION_GET_CONTENT);
-        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath() + File.separator);
-        intent.setDataAndType(uri, type);
-        intent.setType(type);
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, isMultipleSelection);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        if(type != DIRECTORY_TYPE) {
+            intent = new Intent(Intent.ACTION_GET_CONTENT);
+            Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath() + File.separator);
+            intent.setDataAndType(uri, type);
+            intent.setType(type);
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, isMultipleSelection);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+        }else {
+            intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        }
 
         if (intent.resolveActivity(instance.activity().getPackageManager()) != null) {
             instance.activity().startActivityForResult(intent, REQUEST_CODE);
